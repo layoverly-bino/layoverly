@@ -15,7 +15,7 @@ export async function GET(request: Request) {
           ...(role && role !== 'ALL' ? { registrationRole: role } : {}),
           ...(language && language !== 'ALL' ? { languages: { has: language } } : {}),
           // 🚀 DOUBLE-BOOKING FILTER: Automatically exclude guides with pending/accepted bookings
-          assignedBookings: {
+          bookings: {
             none: {
               status: { in: ['PENDING', 'ACCEPTED'] },
             },
