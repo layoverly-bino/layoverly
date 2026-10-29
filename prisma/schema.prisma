@@ -1,0 +1,97 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  TRAVELER
+  GUIDE
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String?   @unique
+  phoneNumber  String?   @unique
+  passwordHash String
+  name         String
+  role         Role      @default(TRAVELER)
+  createdAt    DateTime  @default(now())
+
+  guideProfile Guide?
+  bookings     Booking[] @relation("TravelerBookings")
+}
+
+model Guide {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Registration Role
+  registrationRole  String   @default("GUIDE") // "GUIDE" or "INTERPRETER"
+  
+  // Identity & Credentials
+  nationalIdNumber  String?
+  nationalIdUrl     String?  
+  guideLicenseNo    String?  
+  guideLicenseUrl   String?
+  hasTourismDegree  Boolean  @default(false)
+  degreeUrl         String?  
+
+  // Languages & Proficiency
+  languages         String[] 
+  languageLevels    Json?    
+
+  // Rates & Pricing
+  pricePerHour      Float    @default(20.0) // Flat rate for Interpreters or default base rate
+  tieredRates       Json?    // Stores { "3h": 60, "4h": 75, "5h": 90, "6h": 105, "7h": 120, "8h": 135 }
+
+  // Vehicle Details
+  hasVehicle        Boolean  @default(false)
+  vehicleDetails    String?
+  vehiclePlateNo    String?
+
+  isVerified        Boolean  @default(false)
+  isAvailable       Boolean  @default(true)
+
+  bookings          Booking[] @relation("GuideBookings")
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  travelerId     String
+  traveler       User          @relation("TravelerBookings", fields: [travelerId], references: [id])
+  guideId        String
+  guide          Guide         @relation("GuideBookings", fields: [guideId], references: [id])
+  
+  hours          Float
+  totalPrice     Float
+  status         BookingStatus @default(PENDING) // Uses the defined enum!
+  languages      String[]
+
+  // Flight & Logistics Fields
+  layoverDate    String?
+  inboundFlight  String?
+  inboundTime    String?
+  outboundFlight String?
+  outboundTime   String?
+  transitVisa    String?
+  passportUrl    String?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
